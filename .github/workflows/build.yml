@@ -10,32 +10,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Xcode
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: latest-stable
-
-      - name: Build Kext
+      - name: Inspect File Structure
         run: |
-          # 查找 xcodeproj 文件并执行编译
-          PROJ=$(find . -maxdepth 2 -name "*.xcodeproj" | head -n 1)
+          echo "=== 根目录完整文件结构 ==="
+          ls -la
+          echo "=== 所有xcodeproj/Makefile/CMakeLists位置 ==="
+          find . -maxdepth 3 -name "*.xcodeproj" -o -name "Makefile" -o -name "CMakeLists.txt"
+
+      - name: Attempt Build
+        run: |
+          PROJ=$(find . -maxdepth 3 -name "*.xcodeproj" | head -n 1)
+          MAKE=$(find . -maxdepth 3 -name "Makefile" | head -n 1)
+          CMAKE=$(find . -maxdepth 3 -name "CMakeLists.txt" | head -n 1)
+
           if [ -n "$PROJ" ]; then
-            echo "找到项目文件: $PROJ"
+            echo "发现 Xcode 项目: $PROJ"
             xcodebuild -project "$PROJ" -configuration Release -derivedDataPath buildClean build
+          elif [ -n "$MAKE" ]; then
+            echo "发现 Makefile，尝试 make 编译..."
+            cd $(dirname "$MAKE")
+            make
+          elif [ -n "$CMAKE" ]; then
+            echo "发现 CMake 项目，开始构建..."
+            mkdir -p build && cd build
+            cmake ..
+            make
           else
-            echo "未找到 .xcodeproj 项目文件"
+            echo "警告：未找到标准构建配置文件！"
             exit 1
           fi
 
-      - name: Locate Kext
-        run: |
-          echo "=== 查找生成的 .kext 文件 ==="
-          find . -name "*.kext"
-
-      - name: Upload Artifact
+      - name: Locate and Upload Kext
         uses: actions/upload-artifact@v4
         with:
           name: RTL8821CEwifi-kext
           path: |
-            buildClean/Build/Products/Release/*.kext
             **/*.kext
