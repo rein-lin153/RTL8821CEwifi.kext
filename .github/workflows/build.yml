@@ -10,28 +10,32 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: List files (Debug)
-        run: |
-          echo "=== 根目录文件列表 ==="
-          ls -la
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
 
-      - name: Build with xcodebuild
+      - name: Build Kext
         run: |
-          # 寻找根目录及子目录下的 .xcodeproj 文件
+          # 查找 xcodeproj 文件并执行编译
           PROJ=$(find . -maxdepth 2 -name "*.xcodeproj" | head -n 1)
-          
           if [ -n "$PROJ" ]; then
-            echo "找到 Xcode 工程: $PROJ"
-            xcodebuild -project "$PROJ" -configuration Release build
+            echo "找到项目文件: $PROJ"
+            xcodebuild -project "$PROJ" -configuration Release -derivedDataPath buildClean build
           else
-            echo "未找到 .xcodeproj 文件，尝试常规 make 编译..."
-            make || true
+            echo "未找到 .xcodeproj 项目文件"
+            exit 1
           fi
+
+      - name: Locate Kext
+        run: |
+          echo "=== 查找生成的 .kext 文件 ==="
+          find . -name "*.kext"
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: RTL8821CEwifi-kext
           path: |
-            build/Release/*.kext
+            buildClean/Build/Products/Release/*.kext
             **/*.kext
