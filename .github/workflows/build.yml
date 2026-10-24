@@ -1,0 +1,26 @@
+name: Build Kext
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+
+      - name: Build with xcodebuild
+        run: |
+          xcodebuild -project RTL8821CEwifi.xcodeproj -scheme RTL8821CEwifi -configuration Release build
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: RTL8821CEwifi-kext
+          path: build/Release/RTL8821CEwifi.kext
