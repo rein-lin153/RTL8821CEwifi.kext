@@ -17,10 +17,11 @@ jobs:
 
       - name: Build with xcodebuild
         run: |
-          xcodebuild -project RTL8821CEwifi.xcodeproj -scheme RTL8821CEwifi -configuration Release build
+          # 自动列出工程信息并编译第一个找到的 target/project
+          xcodebuild -configuration Release build
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
           name: RTL8821CEwifi-kext
-          path: build/Release/RTL8821CEwifi.kext
+          path: build/Release/*.kext
